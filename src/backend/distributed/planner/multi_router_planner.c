@@ -3089,15 +3089,20 @@ NormalizeMultiRowInsertTargetList(Query *query)
 	valuesRTE->coltypmods = NIL;
 	valuesRTE->colcollations = NIL;
 
+	List *newTargetList = NIL;
+
 	foreach(targetEntryCell, query->targetList)
 	{
 		TargetEntry *targetEntry = lfirst(targetEntryCell);
 		Node *targetExprNode = (Node *) targetEntry->expr;
+		if (!IsA(targetExprNode, Var))
+		{
+			continue;
+		}
 
-		/* RTE_VALUES comes 2nd, after destination table */
-		Index valuesVarno = 2;
-
-		targetEntryNo++;
+		Var *targetVar = (Var *) targetExprNode;
+		targetVar->varattno = targetEntryNo++;
+		newTargetList = lappend(newTargetList, targetEntry);
 
 		Oid targetType = exprType(targetExprNode);
 		int32 targetTypmod = exprTypmod(targetExprNode);
@@ -3106,19 +3111,9 @@ NormalizeMultiRowInsertTargetList(Query *query)
 		valuesRTE->coltypes = lappend_oid(valuesRTE->coltypes, targetType);
 		valuesRTE->coltypmods = lappend_int(valuesRTE->coltypmods, targetTypmod);
 		valuesRTE->colcollations = lappend_oid(valuesRTE->colcollations, targetColl);
-
-		if (IsA(targetExprNode, Var))
-		{
-			Var *targetVar = (Var *) targetExprNode;
-			targetVar->varattno = targetEntryNo;
-			continue;
-		}
-
-		/* replace the original expression with a Var referencing values_lists */
-		Var *syntheticVar = makeVar(valuesVarno, targetEntryNo, targetType, targetTypmod,
-									targetColl, 0);
-		targetEntry->expr = (Expr *) syntheticVar;
 	}
+
+	query->targetList = newTargetList;
 }
 
 
