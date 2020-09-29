@@ -1777,6 +1777,7 @@ MultiExtendedOpNode(Query *queryTree, Query *originalQuery)
 	extendedOpNode->sortClauseList = queryTree->sortClause;
 	extendedOpNode->limitCount = queryTree->limitCount;
 	extendedOpNode->limitOffset = queryTree->limitOffset;
+	extendedOpNode->limitOption = queryTree->limitOption;
 	extendedOpNode->havingQual = queryTree->havingQual;
 	extendedOpNode->distinctClause = queryTree->distinctClause;
 	extendedOpNode->hasDistinctOn = queryTree->hasDistinctOn;

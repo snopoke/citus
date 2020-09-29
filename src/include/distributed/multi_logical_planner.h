@@ -174,6 +174,7 @@ typedef struct MultiExtendedOp
 	List *sortClauseList;
 	Node *limitCount;
 	Node *limitOffset;
+	LimitOption limitOption;
 	Node *havingQual;
 	List *distinctClause;
 	List *windowClause;

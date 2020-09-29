@@ -515,6 +515,7 @@ BuildJobQuery(MultiNode *multiNode, List *dependentJobList)
 	List *sortClauseList = NIL;
 	Node *limitCount = NULL;
 	Node *limitOffset = NULL;
+	LimitOption limitOption = LIMIT_OPTION_DEFAULT;
 	Node *havingQual = NULL;
 	bool hasDistinctOn = false;
 	List *distinctClause = NIL;
@@ -596,6 +597,7 @@ BuildJobQuery(MultiNode *multiNode, List *dependentJobList)
 
 		limitCount = extendedOp->limitCount;
 		limitOffset = extendedOp->limitOffset;
+		limitOption = extendedOp->limitOption;
 		sortClauseList = extendedOp->sortClauseList;
 		havingQual = extendedOp->havingQual;
 	}
@@ -651,6 +653,7 @@ BuildJobQuery(MultiNode *multiNode, List *dependentJobList)
 	jobQuery->groupClause = groupClauseList;
 	jobQuery->limitOffset = limitOffset;
 	jobQuery->limitCount = limitCount;
+	jobQuery->limitOption = limitOption;
 	jobQuery->havingQual = havingQual;
 	jobQuery->hasAggs = contain_aggs_of_level((Node *) targetList, 0) ||
 						contain_aggs_of_level((Node *) havingQual, 0);
