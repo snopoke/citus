@@ -283,6 +283,11 @@ IsVariableExpression(Node *node)
 		return true;
 	}
 
+	if (IsA(node, CoerceToDomain))
+	{
+		return true;
+	}
+
 	if (IsA(node, Param))
 	{
 		/* ExecInitExpr cannot handle PARAM_SUBLINK */
