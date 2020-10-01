@@ -141,7 +141,9 @@ typedef struct QueryWindowClause
 typedef struct QueryOrderByLimit
 {
 	Node *workerLimitCount;
+#if PG_VERSION_NUM >= PG_VERSION_13
 	LimitOption workerLimitOption;
+#endif
 	List *workerSortClauseList;
 	Index *nextSortGroupRefIndex; /* see QueryGroupClause */
 } QueryOrderByLimit;
@@ -253,7 +255,9 @@ static void ProcessWindowFunctionPullUpForWorkerQuery(List *windowClause,
 													  QueryTargetList *queryTargetList);
 static void ProcessLimitOrderByForWorkerQuery(OrderByLimitReference orderByLimitReference,
 											  Node *originalLimitCount, Node *limitOffset,
+#if PG_VERSION_NUM >= PG_VERSION_13											  
 											  LimitOption originalLimitOption,
+#endif											  
 											  List *sortClauseList, List *groupClauseList,
 											  List *originalTargetList,
 											  QueryOrderByLimit *queryOrderByLimit,
@@ -1492,7 +1496,9 @@ MasterExtendedOpNode(MultiExtendedOp *originalOpNode,
 	masterExtendedOpNode->hasDistinctOn = originalOpNode->hasDistinctOn;
 	masterExtendedOpNode->limitCount = originalOpNode->limitCount;
 	masterExtendedOpNode->limitOffset = originalOpNode->limitOffset;
+#if PG_VERSION_NUM >= PG_VERSION_13	
 	masterExtendedOpNode->limitOption = originalOpNode->limitOption;
+#endif	
 	masterExtendedOpNode->havingQual = newHavingQual;
 
 	if (!extendedOpNodeProperties->onlyPushableWindowFunctions)
@@ -2324,7 +2330,9 @@ WorkerExtendedOpNode(MultiExtendedOp *originalOpNode,
 	Node *originalHavingQual = originalOpNode->havingQual;
 	Node *originalLimitCount = originalOpNode->limitCount;
 	Node *originalLimitOffset = originalOpNode->limitOffset;
+#if PG_VERSION_NUM >= PG_VERSION_13	
 	LimitOption originalLimitOption = originalOpNode->limitOption;
+#endif
 	List *originalWindowClause = originalOpNode->windowClause;
 	List *originalDistinctClause = originalOpNode->distinctClause;
 	bool hasDistinctOn = originalOpNode->hasDistinctOn;
@@ -2434,7 +2442,10 @@ WorkerExtendedOpNode(MultiExtendedOp *originalOpNode,
 										   originalTargetEntryList);
 
 			ProcessLimitOrderByForWorkerQuery(limitOrderByReference, originalLimitCount,
-											  originalLimitOffset, originalLimitOption,
+											  originalLimitOffset,
+#if PG_VERSION_NUM >= PG_VERSION_13											  
+											  originalLimitOption,
+#endif											  
 											  originalSortClauseList,
 											  originalGroupClauseList,
 											  originalTargetEntryList,
@@ -2455,7 +2466,9 @@ WorkerExtendedOpNode(MultiExtendedOp *originalOpNode,
 	workerExtendedOpNode->windowClause = queryWindowClause.workerWindowClauseList;
 	workerExtendedOpNode->sortClauseList = queryOrderByLimit.workerSortClauseList;
 	workerExtendedOpNode->limitCount = queryOrderByLimit.workerLimitCount;
+#if PG_VERSION_NUM >= PG_VERSION_13
 	workerExtendedOpNode->limitOption = queryOrderByLimit.workerLimitOption;
+#endif
 
 	return workerExtendedOpNode;
 }
@@ -2773,7 +2786,9 @@ ProcessWindowFunctionPullUpForWorkerQuery(List *windowClause,
 static void
 ProcessLimitOrderByForWorkerQuery(OrderByLimitReference orderByLimitReference,
 								  Node *originalLimitCount, Node *limitOffset,
+#if PG_VERSION_NUM >= PG_VERSION_13								  
 								  LimitOption originalLimitOption,
+#endif								  
 								  List *sortClauseList, List *groupClauseList,
 								  List *originalTargetList,
 								  QueryOrderByLimit *queryOrderByLimit,
@@ -2782,7 +2797,9 @@ ProcessLimitOrderByForWorkerQuery(OrderByLimitReference orderByLimitReference,
 	queryOrderByLimit->workerLimitCount =
 		WorkerLimitCount(originalLimitCount, limitOffset, orderByLimitReference);
 
+#if PG_VERSION_NUM >= PG_VERSION_13
 	queryOrderByLimit->workerLimitOption = originalLimitOption;
+#endif
 
 	queryOrderByLimit->workerSortClauseList =
 		WorkerSortClauseList(originalLimitCount,
