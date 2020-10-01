@@ -293,6 +293,20 @@ IsVariableExpression(Node *node)
 }
 
 
+static bool
+contain_non_const_walker(Node *node, void *context)
+{
+	if (node == NULL)
+		return false;
+	if (IsA(node, Const))
+		return false;
+	if (IsA(node, List))
+		return expression_tree_walker(node, contain_non_const_walker, context);
+	/* Otherwise, abort the tree traversal and return true */
+	return true;
+}
+
+
 /*
  * a copy of pg's evaluate_expr, pre-evaluate a constant expression
  *
@@ -335,6 +349,11 @@ citus_evaluate_expr(Expr *expr, Oid result_type, int32 result_typmod,
 			/* bail out, the caller doesn't want functions/expressions to be evaluated */
 			return expr;
 		}
+	}
+
+	if (expression_tree_walker((Node *) (expr), contain_non_const_walker, NULL))
+	{
+		ereport(ERROR, (errmsg("This is a bug I think")));
 	}
 
 	/*
