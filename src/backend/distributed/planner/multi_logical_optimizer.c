@@ -2455,6 +2455,7 @@ WorkerExtendedOpNode(MultiExtendedOp *originalOpNode,
 	workerExtendedOpNode->sortClauseList = queryOrderByLimit.workerSortClauseList;
 	workerExtendedOpNode->limitCount = queryOrderByLimit.workerLimitCount;
 #if PG_VERSION_NUM >= PG_VERSION_13
+
 	/*
 	 * If the limitCount cannot be pushed down it will be NULL, so the deparser will
 	 * ignore the limitOption.
