@@ -141,9 +141,6 @@ typedef struct QueryWindowClause
 typedef struct QueryOrderByLimit
 {
 	Node *workerLimitCount;
-#if PG_VERSION_NUM >= PG_VERSION_13
-	LimitOption workerLimitOption;
-#endif
 	List *workerSortClauseList;
 	Index *nextSortGroupRefIndex; /* see QueryGroupClause */
 } QueryOrderByLimit;
@@ -255,9 +252,6 @@ static void ProcessWindowFunctionPullUpForWorkerQuery(List *windowClause,
 													  QueryTargetList *queryTargetList);
 static void ProcessLimitOrderByForWorkerQuery(OrderByLimitReference orderByLimitReference,
 											  Node *originalLimitCount, Node *limitOffset,
-#if PG_VERSION_NUM >= PG_VERSION_13
-											  LimitOption originalLimitOption,
-#endif
 											  List *sortClauseList, List *groupClauseList,
 											  List *originalTargetList,
 											  QueryOrderByLimit *queryOrderByLimit,
@@ -2330,9 +2324,6 @@ WorkerExtendedOpNode(MultiExtendedOp *originalOpNode,
 	Node *originalHavingQual = originalOpNode->havingQual;
 	Node *originalLimitCount = originalOpNode->limitCount;
 	Node *originalLimitOffset = originalOpNode->limitOffset;
-#if PG_VERSION_NUM >= PG_VERSION_13
-	LimitOption originalLimitOption = originalOpNode->limitOption;
-#endif
 	List *originalWindowClause = originalOpNode->windowClause;
 	List *originalDistinctClause = originalOpNode->distinctClause;
 	bool hasDistinctOn = originalOpNode->hasDistinctOn;
@@ -2443,9 +2434,6 @@ WorkerExtendedOpNode(MultiExtendedOp *originalOpNode,
 
 			ProcessLimitOrderByForWorkerQuery(limitOrderByReference, originalLimitCount,
 											  originalLimitOffset,
-#if PG_VERSION_NUM >= PG_VERSION_13
-											  originalLimitOption,
-#endif
 											  originalSortClauseList,
 											  originalGroupClauseList,
 											  originalTargetEntryList,
@@ -2467,7 +2455,11 @@ WorkerExtendedOpNode(MultiExtendedOp *originalOpNode,
 	workerExtendedOpNode->sortClauseList = queryOrderByLimit.workerSortClauseList;
 	workerExtendedOpNode->limitCount = queryOrderByLimit.workerLimitCount;
 #if PG_VERSION_NUM >= PG_VERSION_13
-	workerExtendedOpNode->limitOption = queryOrderByLimit.workerLimitOption;
+	/*
+	 * If the limitCount cannot be pushed down it will be NULL, so the deparser will
+	 * ignore the limitOption.
+	 */
+	workerExtendedOpNode->limitOption = originalOpNode->limitOption;
 #endif
 
 	return workerExtendedOpNode;
@@ -2786,9 +2778,6 @@ ProcessWindowFunctionPullUpForWorkerQuery(List *windowClause,
 static void
 ProcessLimitOrderByForWorkerQuery(OrderByLimitReference orderByLimitReference,
 								  Node *originalLimitCount, Node *limitOffset,
-#if PG_VERSION_NUM >= PG_VERSION_13
-								  LimitOption originalLimitOption,
-#endif
 								  List *sortClauseList, List *groupClauseList,
 								  List *originalTargetList,
 								  QueryOrderByLimit *queryOrderByLimit,
@@ -2796,10 +2785,6 @@ ProcessLimitOrderByForWorkerQuery(OrderByLimitReference orderByLimitReference,
 {
 	queryOrderByLimit->workerLimitCount =
 		WorkerLimitCount(originalLimitCount, limitOffset, orderByLimitReference);
-
-#if PG_VERSION_NUM >= PG_VERSION_13
-	queryOrderByLimit->workerLimitOption = originalLimitOption;
-#endif
 
 	queryOrderByLimit->workerSortClauseList =
 		WorkerSortClauseList(originalLimitCount,

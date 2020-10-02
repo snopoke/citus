@@ -2096,6 +2096,7 @@ get_select_query_def(Query *query, deparse_context *context,
 	{
 		if (query->limitOption == LIMIT_OPTION_WITH_TIES)
 		{
+			// had to add '(' and ')' here because it fails with casting
 			appendContextKeyword(context, " FETCH FIRST (",
 								 -PRETTYINDENT_STD, PRETTYINDENT_STD, 0);
 			get_rule_expr(query->limitCount, context, false);
