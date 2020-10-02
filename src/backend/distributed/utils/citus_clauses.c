@@ -306,7 +306,6 @@ citus_evaluate_expr(Expr *expr, Oid result_type, int32 result_typmod,
 					Oid result_collation,
 					CoordinatorEvaluationContext *coordinatorEvaluationContext)
 {
-	PlanState *planState = NULL;
 	EState     *estate;
 	ExprState  *exprstate;
 	ExprContext *econtext;
@@ -317,8 +316,6 @@ citus_evaluate_expr(Expr *expr, Oid result_type, int32 result_typmod,
 
 	if (coordinatorEvaluationContext)
 	{
-		planState = coordinatorEvaluationContext->planState;
-
 		if (IsA(expr, Param))
 		{
 			if (coordinatorEvaluationContext->evaluationMode == EVALUATE_NONE)
@@ -355,18 +352,9 @@ citus_evaluate_expr(Expr *expr, Oid result_type, int32 result_typmod,
 	 * Prepare expr for execution.  (Note: we can't use ExecPrepareExpr
 	 * because it'd result in recursively invoking eval_const_expressions.)
 	 */
-	exprstate = ExecInitExpr(expr, planState);
+	exprstate = ExecInitExpr(expr, NULL);
 
-	if (planState != NULL)
-	{
-		/* use executor's context to pass down parameters */
-		econtext = planState->ps_ExprContext;
-	}
-	else
-	{
-		/* when called from a function, use a default context */
-		econtext = GetPerTupleExprContext(estate);
-	}
+	econtext = GetPerTupleExprContext(estate);
 
 	/*
 	 * And evaluate it.
