@@ -72,6 +72,31 @@ SELECT * FROM with_ties_table_2 ORDER BY c;
 TRUNCATE with_ties_table_2;
 
 
+-- test INSERT SELECTs into distributed table with a different distribution column
+SELECT undistribute_table('with_ties_table_2');
+SELECT create_distributed_table('with_ties_table_2', 'b');
+
+-- test ordering by distribution column
+INSERT INTO with_ties_table_2 SELECT * FROM with_ties_table ORDER BY a OFFSET 1 FETCH FIRST 2 ROWS WITH TIES;
+SELECT * FROM with_ties_table_2 ORDER BY c;
+TRUNCATE with_ties_table_2;
+
+-- test ordering by non-distribution column
+INSERT INTO with_ties_table_2 SELECT * FROM with_ties_table ORDER BY b OFFSET 1 FETCH FIRST 2 ROWS WITH TIES;
+SELECT * FROM with_ties_table_2 ORDER BY c;
+TRUNCATE with_ties_table_2;
+
+-- test ordering by distribution column filtering one shard
+INSERT INTO with_ties_table_2 SELECT * FROM with_ties_table WHERE a=12 ORDER BY a OFFSET 1 FETCH FIRST 1 ROWS WITH TIES;
+SELECT * FROM with_ties_table_2 ORDER BY c;
+TRUNCATE with_ties_table_2;
+
+-- test ordering by non-distribution column filtering one shard
+INSERT INTO with_ties_table_2 SELECT * FROM with_ties_table WHERE a=12 ORDER BY b OFFSET 1 FETCH FIRST 1 ROWS WITH TIES;
+SELECT * FROM with_ties_table_2 ORDER BY c;
+TRUNCATE with_ties_table_2;
+
+
 -- test ordering by multiple columns
 SELECT * FROM with_ties_table ORDER BY a, b OFFSET 1 FETCH FIRST 2 ROWS WITH TIES;
 
