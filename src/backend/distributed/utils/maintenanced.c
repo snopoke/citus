@@ -292,12 +292,34 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 		proc_exit(0);
 	}
 
+	if (myDbData->workerPid != 0 && myDbData->workerPid != MyProcPid)
+	{
+		/*
+		 * Another maintenance daemon is running. This usually happens because
+		 * postgres restarts the daemon after an non-zero exit, and
+		 * InitializeMaintenanceDaemonBackend started one before postgres did.
+		 * In that case, the first one stays and the last one exits.
+		 */
+
+		proc_exit(0);
+	}
+
 	before_shmem_exit(MaintenanceDaemonShmemExit, main_arg);
 
 	Assert(myDbData->workerPid == 0);
 
-	/* from this point, DROP DATABASE will attempt to kill the worker */
+	/*
+	 * Signal that I am the maintenance daemon now.
+	 *
+	 * From this point, DROP DATABASE/EXTENSION will send a SIGTERM to me.
+	 */
 	myDbData->workerPid = MyProcPid;
+
+	/*
+	 * Signal that we are running. This in mainly needed in case of restart after
+	 * an error, otherwise the daemonStarted flag is already true.
+	 */
+	myDbData->daemonStarted = true;
 
 	/* wire up signals */
 	pqsignal(SIGTERM, MaintenanceDaemonSigTermHandler);
